@@ -1,4 +1,4 @@
-package io.maksymdobrynin.snowflakegenerator
+package com.radmiy.snowflakegenerator
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean

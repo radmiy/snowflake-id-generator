@@ -1,4 +1,4 @@
-package io.maksymdobrynin.snowflakegenerator
+package com.radmiy.snowflakegenerator
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex

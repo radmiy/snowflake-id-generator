@@ -9,7 +9,7 @@ plugins {
 
 apply(plugin = "io.spring.dependency-management")
 
-group = "io.maksymdobrynin"
+group = "com.radmiy"
 version = "0.0.1-SNAPSHOT"
 
 java {

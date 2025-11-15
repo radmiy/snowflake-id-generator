@@ -1,4 +1,4 @@
-package io.maksymdobrynin.snowflakegenerator
+package com.radmiy.snowflakegenerator
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
