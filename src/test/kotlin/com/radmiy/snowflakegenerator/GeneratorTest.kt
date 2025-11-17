@@ -1,4 +1,4 @@
-package io.maksymdobrynin.snowflakegenerator
+package com.radmiy.snowflakegenerator
 
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope

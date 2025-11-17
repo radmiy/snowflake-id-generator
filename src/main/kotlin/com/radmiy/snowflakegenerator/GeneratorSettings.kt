@@ -1,4 +1,4 @@
-package io.maksymdobrynin.snowflakegenerator
+package com.radmiy.snowflakegenerator
 
 data class GeneratorSettings(
 	// 00:00:00 on January 1st, 2000 (UTC)
