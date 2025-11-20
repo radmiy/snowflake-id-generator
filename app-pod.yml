@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: app-pod
   labels:
-    app: my-app
+    app: app-pod
 spec:
   containers:
     - name: snowflake-id-generator
