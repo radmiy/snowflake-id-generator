@@ -7,4 +7,14 @@ data class GeneratorSettings(
 	var workedId: Long = 1,
 	var nextTimeSeed: () -> Long = { System.currentTimeMillis() },
 	var sequence: Long = 0L,
-)
+) {
+	constructor(
+		startingEpoch: Long,
+		datacenter: Long,
+		worked: Long,
+	) : this(
+		startingEpoch = startingEpoch,
+		datacenterId = datacenter,
+		workedId = worked,
+	)
+}
