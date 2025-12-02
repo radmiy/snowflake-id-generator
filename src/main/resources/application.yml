@@ -4,8 +4,19 @@ spring:
 
 snowflake-settings:
   starting-epoch: 946684800
-  datacenter-id: 1
-  worked-id: 1
+  datacenter-id: ${KUBERNETES_SERVICE_HOST:""}
+  worked-id: ${HOSTNAME:""}
+
+logging:
+  file:
+    name: ./logs/application.log
+  level:
+    root: INFO
+    org.springframework: WARN
+    com.radmiy.snowflakegenerator: DEBUG
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){green} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 management:
   endpoints:
