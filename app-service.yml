@@ -8,7 +8,7 @@ spec:
   selector:
     app: id-generator
   ports:
-    - port: 8080
+    - port: 80
       name: http
       targetPort: 8080
       nodePort: 30080
