@@ -2,10 +2,10 @@ spring:
   application:
     name: "Snowflake ID Generator"
 
-snowflake-settings:
-  starting-epoch: 946684800
-  datacenter-id: ${KUBERNETES_SERVICE_HOST:""}
-  worked-id: ${HOSTNAME:""}
+id-generator-settings:
+  starting-epoch: ${STARTING_EPOCH}
+  datacenter-id: ${DATACENTER_ID}
+  worked-id: ${WORKED_ID}
 
 logging:
   file:

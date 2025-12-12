@@ -15,8 +15,65 @@ spec:
       labels:
         app: id-generator
     spec:
+      initContainers:
+        - name: init-worked-id
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              WORKED_ID=$((1 + RANDOM % 31))
+              echo $WORKED_ID > /worked-id/worked-id.txt
+              echo "Generated worked-id: $WORKED_ID"
+          volumeMounts:
+            - name: worked-id-volume
+              mountPath: /worked-id
       containers:
         - name: snowflake-id-generator
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: LOG_LEVEL
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: MESSAGE
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: SPRING_APPLICATION_NAME
+            - name: STARTING_EPOCH
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: STARTING_EPOCH
+            - name: WORKED_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: WORKED_ID
+            - name: DATACENTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: DATACENTER_ID
+          command:
+            - sh
+            - -c
+            - |
+              export WORKED_ID=$(cat /worked-id/worked-id.txt)
+              echo "id-generator-settings.worked-id = $WORKED_ID"
+              exec java -jar app.jar
+          volumeMounts:
+            - name: worked-id-volume
+              mountPath: /worked-id
+            - name: id-generator-config-volume
+              mountPath: /config
+              readOnly: true
           image: snowflake-id-generator:0.0.1-SNAPSHOT
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -49,3 +106,9 @@ spec:
               memory: "512Mi"
 
       restartPolicy: Always
+      volumes:
+        - name: worked-id-volume
+          emptyDir: {}
+        - name: id-generator-config-volume
+          configMap:
+            name: id-generator-config
