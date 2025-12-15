@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: id-generator-deployment
+  labels:
+    app: id-generator-deployment
+  annotations:
+    kubernetes.io/change-cause: "Update to bad deployment"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: id-generator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      name: id-generator
+      labels:
+        app: id-generator
+    spec:
+      initContainers:
+        - name: init-worked-id
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              WORKED_ID=$((1 + RANDOM % 31))
+              echo $WORKED_ID > /worked-id/worked-id.txt
+              echo "Generated worked-id: $WORKED_ID"
+          volumeMounts:
+            - name: worked-id-volume
+              mountPath: /worked-id
+      containers:
+        - name: snowflake-id-generator
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: LOG_LEVEL
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: MESSAGE
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: SPRING_APPLICATION_NAME
+            - name: STARTING_EPOCH
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: STARTING_EPOCH
+            - name: WORKED_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: WORKED_ID
+            - name: DATACENTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: id-generator-config
+                  key: DATACENTER_ID
+          command:
+            - sh
+            - -c
+            - |
+              export WORKED_ID=$(cat /worked-id/worked-id.txt)
+              echo "id-generator-settings.worked-id = $WORKED_ID"
+              exec java -jar app.jar
+          volumeMounts:
+            - name: worked-id-volume
+              mountPath: /worked-id
+            - name: id-generator-config-volume
+              mountPath: /config
+              readOnly: true
+          image: snowflake-id-generator:1.0.0-SNAPSHOT
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /management/health/liveness
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /management/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+      restartPolicy: Always
+      volumes:
+        - name: worked-id-volume
+          emptyDir: {}
+        - name: id-generator-config-volume
+          configMap:
+            name: id-generator-config
