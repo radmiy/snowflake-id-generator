@@ -25,6 +25,7 @@ dependencies {
 	implementation(libs.kotlinx.coroutines)
 	implementation(libs.springframework.boot.starter.web)
 	implementation(libs.springframework.boot.starter.actuator)
+	implementation("org.projectlombok:lombok")
 	testImplementation(libs.junit.jupiter)
 	testImplementation(libs.assertj.core)
 	testImplementation(libs.kotlinx.coroutines.test)
