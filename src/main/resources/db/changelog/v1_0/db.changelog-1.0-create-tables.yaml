@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1.0-create-payment-table
+      author: mentor
+      changes:
+        - createTable:
+            tableName: snowflakeid
+            columns:
+              - column:
+                  name: guid
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: datacenter_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: worked_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: CURRENT_TIMESTAMP
