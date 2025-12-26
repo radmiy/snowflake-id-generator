@@ -5,10 +5,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.springframework.stereotype.Service
+import java.time.OffsetDateTime
 
 @Service
 class Generator(
 	private val settings: GeneratorSettings,
+	private val repository: SnowflakeIdRepository,
 ) {
 	companion object {
 		private const val NEW_TIMESTAMP_TIMEOUT = 3000L
@@ -74,7 +76,7 @@ class Generator(
 	 *
 	 * @return The next unique identifier as a 64-bit unsigned `Long`.
 	 */
-	suspend fun nextId(): Long =
+	suspend fun nextId(): SnowflakeId =
 		lock.withLock {
 			var timestamp = settings.nextTimeSeed.invoke()
 
@@ -89,10 +91,16 @@ class Generator(
 
 			lastTimestamp = timestamp
 
-			return ((lastTimestamp - settings.startingEpoch) shl timestampIdShift) or
+			val id = ((lastTimestamp - settings.startingEpoch) shl timestampIdShift) or
 				(settings.datacenterId shl datacenterIdShift) or
 				(settings.workedId shl workerIdShift) or
 				settings.sequence
+
+			val snowflakeId =
+				SnowflakeId(id, OffsetDateTime.now(), settings.datacenterId.toInt(), settings.workedId.toInt())
+			repository.save(snowflakeId)
+
+			return snowflakeId
 		}
 
 	private suspend fun wait(): Long =

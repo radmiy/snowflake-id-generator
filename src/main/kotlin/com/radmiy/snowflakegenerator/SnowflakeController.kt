@@ -13,6 +13,6 @@ class SnowflakeController(private val generator: Generator) {
 	suspend fun generate(): Long {
 		log.info("Generating Snowflake ID")
 
-		return generator.nextId()
+		return generator.nextId().guid
 	}
 }
