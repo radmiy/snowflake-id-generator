@@ -26,9 +26,16 @@ dependencies {
 	implementation(libs.springframework.boot.starter.web)
 	implementation(libs.springframework.boot.starter.actuator)
 	implementation("org.projectlombok:lombok")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("io.projectreactor:reactor-core")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+	implementation("org.postgresql:postgresql")
+	implementation("org.liquibase:liquibase-core")
 	testImplementation(libs.junit.jupiter)
 	testImplementation(libs.assertj.core)
 	testImplementation(libs.kotlinx.coroutines.test)
+	testImplementation("io.mockk:mockk:1.13.13")
 }
 
 tasks.withType<KotlinCompile> {

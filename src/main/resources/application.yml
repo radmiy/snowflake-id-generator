@@ -7,6 +7,22 @@ id-generator-settings:
   datacenter-id: ${DATACENTER_ID}
   worked-id: ${WORKED_ID}
 
+postgres:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    changeLogFile: db/changelog/db.changelog-master.yaml
+jpa:
+  hibernate:
+    ddl-auto: validate
+  show-sql: true
+  properties:
+    hibernate:
+      format_sql: true
+liquibase:
+  enabled: true
+  change-log: classpath:db/changelog/db.changelog-master.yaml
 logging:
   file:
     name: ./logs/application.log

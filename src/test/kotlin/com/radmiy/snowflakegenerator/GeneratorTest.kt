@@ -1,5 +1,7 @@
 package com.radmiy.snowflakegenerator
 
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -9,12 +11,17 @@ import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicLong
 
 class GeneratorTest {
+	private val snowflakeIdRepository = mockk<SnowflakeIdRepository>()
+
 	@ParameterizedTest
 	@ValueSource(longs = [-4, -3, -2, -1])
 	fun `Should fail to init Generator when given time epoch doesn't match range`(invalidStartingTimeEpoch: Long) {
+		val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+		every { snowflakeIdRepository.save(any()) } returns snowflakeId
 		assertThatCode {
 			Generator(
 				GeneratorSettings(
@@ -22,6 +29,7 @@ class GeneratorTest {
 					datacenterId = 1,
 					workedId = 1,
 				),
+				snowflakeIdRepository,
 			)
 		}
 			.isExactlyInstanceOf(IllegalArgumentException::class.java)
@@ -31,12 +39,15 @@ class GeneratorTest {
 	@ParameterizedTest
 	@ValueSource(longs = [-5, -4, -3, -2, -1, 0, 32, 33, 34, 35, 36])
 	fun `Should fail to init Generator when given Datacenter ID doesn't match range`(invalidDatacenterId: Long) {
+		val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+		every { snowflakeIdRepository.save(any()) } returns snowflakeId
 		assertThatCode {
 			Generator(
 				GeneratorSettings(
 					datacenterId = invalidDatacenterId,
 					workedId = 1,
 				),
+				snowflakeIdRepository,
 			)
 		}
 			.isExactlyInstanceOf(IllegalArgumentException::class.java)
@@ -46,12 +57,15 @@ class GeneratorTest {
 	@ParameterizedTest
 	@ValueSource(longs = [-5, -4, -3, -2, -1, 0, 32, 33, 34, 35, 36])
 	fun `Should fail to instantiate Generator when given Worker ID doesn't match possible range`(invalidWorkerId: Long) {
+		val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+		every { snowflakeIdRepository.save(any()) } returns snowflakeId
 		assertThatCode {
 			Generator(
 				GeneratorSettings(
 					datacenterId = 1,
 					workedId = invalidWorkerId,
 				),
+				snowflakeIdRepository
 			)
 		}
 			.isExactlyInstanceOf(IllegalArgumentException::class.java)
@@ -61,6 +75,8 @@ class GeneratorTest {
 	@ParameterizedTest
 	@ValueSource(longs = [-5, -4, -3, -2, -1, 4096, 4097, 4098, 4099, 4100])
 	fun `Should fail to instantiate Generator when given Sequence doesn't match possible range`(invalidSequence: Long) {
+		val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+		every { snowflakeIdRepository.save(any()) } returns snowflakeId
 		assertThatCode {
 			Generator(
 				GeneratorSettings(
@@ -68,6 +84,7 @@ class GeneratorTest {
 					workedId = 1,
 					sequence = invalidSequence,
 				),
+				snowflakeIdRepository
 			)
 		}
 			.isExactlyInstanceOf(IllegalArgumentException::class.java)
@@ -77,6 +94,9 @@ class GeneratorTest {
 	@Test
 	fun `Should generate deterministic identifier based on given parameters`() =
 		runTest {
+			val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+			every { snowflakeIdRepository.save(any()) } returns snowflakeId
+
 			val deterministicDatacenterId = 1L
 			val deterministicWorkerId = 1L
 			val deterministicStartingEpoch = 0L // 00:00:00 UTC on January 1, 1970
@@ -90,7 +110,7 @@ class GeneratorTest {
 					deterministicStartingEpoch,
 					deterministicSequence,
 				) { nextTimeSeed }
-					.nextId()
+					.nextId().guid
 
 			val expectedResult =
 				deterministicIdentifier(
@@ -109,6 +129,9 @@ class GeneratorTest {
 	@Test
 	fun `Should generate unique deterministic id based on given parameters when call multiple times`() =
 		runTest {
+			val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+			every { snowflakeIdRepository.save(any()) } returns snowflakeId
+
 			val deterministicDatacenterId = 1L
 			val deterministicWorkerId = 1L
 			val deterministicStartingEpoch = 0L // 00:00:00 UTC on January 1, 1970
@@ -124,7 +147,7 @@ class GeneratorTest {
 					deterministicSequence,
 				) { nextTimeGenerator.getAndIncrement() }
 
-			val actualResult1 = generator.nextId()
+			val actualResult1 = generator.nextId().guid
 			val expectedResult1 =
 				deterministicIdentifier(
 					nextTimeSeed,
@@ -138,7 +161,7 @@ class GeneratorTest {
 				.describedAs("Generated ID [Attempt #1] should be deterministic based on given parameters.")
 				.isEqualTo(expectedResult1)
 
-			val actualResult2 = generator.nextId()
+			val actualResult2 = generator.nextId().guid
 			val expectedResult2 =
 				deterministicIdentifier(
 					nextTimeSeed + nextTimeSeed,
@@ -156,6 +179,9 @@ class GeneratorTest {
 	@Test
 	fun `Should ensure the Generator produces unique IDs when accessed concurrently by multiple threads`() =
 		runTest {
+			val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+			every { snowflakeIdRepository.save(any()) } returns snowflakeId
+
 			val deterministicDatacenterId = 1L
 			val deterministicWorkerId = 1L
 			val deterministicStartingEpoch = 0L // 00:00:00 UTC on January 1, 1970
@@ -188,7 +214,7 @@ class GeneratorTest {
 			coroutineScope {
 				repeat(5) {
 					launch {
-						actualIds.add(generator.nextId())
+						actualIds.add(generator.nextId().guid)
 					}
 				}
 			}
@@ -200,6 +226,9 @@ class GeneratorTest {
 	@Test
 	fun `Should generate deterministic identifier with incremented sequence when accessed for same timestamp`() =
 		runTest {
+			val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+			every { snowflakeIdRepository.save(any()) } returns snowflakeId
+
 			val deterministicDatacenterId = 1L
 			val deterministicWorkerId = 1L
 			val deterministicStartingEpoch = 0L // 00:00:00 UTC on January 1, 1970
@@ -213,7 +242,7 @@ class GeneratorTest {
 					deterministicStartingEpoch = deterministicStartingEpoch,
 					deterministicSequence = deterministicSequence,
 				) { nextTimeSeed }
-					.nextId()
+					.nextId().guid
 
 			val expectedResult =
 				deterministicIdentifier(
@@ -232,6 +261,9 @@ class GeneratorTest {
 	@Test
 	fun `Should generate deterministic identifier with new timestamp when sequence exceed for same timestamp`() =
 		runTest {
+			val snowflakeId = SnowflakeId(0L, OffsetDateTime.now(), 0, 0)
+			every { snowflakeIdRepository.save(any()) } returns snowflakeId
+
 			val deterministicDatacenterId = 1L
 			val deterministicWorkerId = 1L
 			val deterministicStartingEpoch = 0L // 00:00:00 UTC on January 1, 1970
@@ -246,7 +278,7 @@ class GeneratorTest {
 					deterministicStartingEpoch,
 					deterministicSequence,
 				) { nextTimeGenerator.incrementAndGet() }
-					.nextId()
+					.nextId().guid
 
 			val expectedResult =
 				deterministicIdentifier(
@@ -300,6 +332,7 @@ class GeneratorTest {
 				sequence = deterministicSequence,
 				nextTimeSeed = nextTimeSeed,
 			),
+			snowflakeIdRepository,
 		)
 
 	private fun deterministicIdentifier(

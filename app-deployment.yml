@@ -68,6 +68,36 @@ spec:
                 configMapKeyRef:
                   name: id-generator-config
                   key: DATACENTER_ID
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: SPRING_DATASOURCE_URL_0
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: LIQUIBASE_COMMAND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: SPRING_DATASOURCE_URL_0
+            - name: LIQUIBASE_COMMAND_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
+            - name: LIQUIBASE_COMMAND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
           command:
             - sh
             - -c
@@ -80,6 +110,12 @@ spec:
               mountPath: /worked-id
             - name: id-generator-config-volume
               mountPath: /config
+              readOnly: true
+            - name: postgres-config-volume
+              mountPath: /postgres_config
+              readOnly: true
+            - name: postgres-secrets-volume
+              mountPath: /postgres_secrets
               readOnly: true
           image: snowflake-id-generator:0.0.1-SNAPSHOT
           imagePullPolicy: IfNotPresent
@@ -119,3 +155,9 @@ spec:
         - name: id-generator-config-volume
           configMap:
             name: id-generator-config
+        - name: postgres-config-volume
+          configMap:
+            name: postgres-config
+        - name: postgres-secrets-volume
+          secret:
+            secretName: postgres-secrets
