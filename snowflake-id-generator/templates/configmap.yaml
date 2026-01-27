@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-config
+  labels:
+    app: {{ .Chart.Name }}-config
+data:
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  MESSAGE: {{ .Values.config.message | quote }}
+  SPRING_APPLICATION_NAME: {{ .Values.config.springApplicationName | quote }}
+  STARTING_EPOCH: {{ .Values.config.startingEpoch | quote }}
+  DATACENTER_ID: {{ .Values.config.dataCenterId | quote }}
+  WORKED_ID: {{ .Values.config.workedId | quote }}

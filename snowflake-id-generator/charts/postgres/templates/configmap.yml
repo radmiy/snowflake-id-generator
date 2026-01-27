@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-config
+  labels:
+    app: {{ .Chart.Name }}-config
+data:
+  SPRING_DATASOURCE_URL_0: {{ .Values.global.postgres.springDataSourceUrl0 }}
+  SPRING_DATASOURCE_URL_1: {{ .Values.global.postgres.springDataSourceUrl1 }}
+  POSTGRES_DB: {{ .Values.global.postgres.postgresDb }}
+  POSTGRES_PORT: {{ .Values.global.postgres.postgresPort | quote}}
+  POSTGRES_DRIVER_CLASS: {{ .Values.global.postgres.postgresDriverClass }}

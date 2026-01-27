@@ -1,0 +1,231 @@
+replicaCount: 3
+
+image:
+  repository: snowflake-id-generator
+  tag: 0.0.1-SNAPSHOT
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8080
+  nodePort: 30080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: contour
+  host: snowflake.dev.local
+  tls: true
+
+deployment:
+  livenessProbe:
+    httpGet:
+      path: /management/health/liveness
+  readinessProbe:
+    httpGet:
+      path: /management/health/readiness
+  initContainers:
+    - name: init-worked-id
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          WORKED_ID=$((1 + RANDOM % 31))
+          echo $WORKED_ID > /worked-id/worked-id.txt
+          echo "Generated worked-id: $WORKED_ID"
+      volumeMounts:
+        - name: worked-id-volume
+          mountPath: /worked-id
+config:
+  logLevel: "debug"
+  message: "Hello, world from ConfigMap!"
+  springApplicationName: "Snowflake Id Generator"
+  startingEpoch: "946684800"
+  dataCenterId: "1"
+  workedId: "1"
+
+secrets:
+  crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlEOXpDQ0F0K2dBd0lCQWdJVVF5VGFSeVFoV0Z2Y3RoTWZuMW9FTlExWFAyd3dEUVlKS29aSWh2Y05BUUVMDQpCUUF3Z1lveEN6QUpCZ05WQkFZVEFrSlpNUTR3REFZRFZRUUlEQVZOYVc1emF6RU9NQXdHQTFVRUJ3d0ZUV2x1DQpjMnN4RGpBTUJnTlZCQW9NQlUxNVQzSm5NUXN3Q1FZRFZRUUxEQUpKVkRFY01Cb0dBMVVFQXd3VGMyNXZkMlpzDQpZV3RsTG1SbGRpNXNiMk5oYkRFZ01CNEdDU3FHU0liM0RRRUpBUllSWVdSdGFXNUFaWGhoYlhCc1pTNWpiMjB3DQpIaGNOTWpVeE1qRXlNVEl4T1RVMFdoY05Nall4TWpFeU1USXhPVFUwV2pDQmlqRUxNQWtHQTFVRUJoTUNRbGt4DQpEakFNQmdOVkJBZ01CVTFwYm5Ock1RNHdEQVlEVlFRSERBVk5hVzV6YXpFT01Bd0dBMVVFQ2d3RlRYbFBjbWN4DQpDekFKQmdOVkJBc01Ba2xVTVJ3d0dnWURWUVFEREJOemJtOTNabXhoYTJVdVpHVjJMbXh2WTJGc01TQXdIZ1lKDQpLb1pJaHZjTkFRa0JGaEZoWkcxcGJrQmxlR0Z0Y0d4bExtTnZiVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEDQpnZ0VQQURDQ0FRb0NnZ0VCQUsrK2QxdUVCcVdaVldrSnB3ZEg2cmExOER2ZytjSC9Lb1JaTVErRlpycVp5dnEwDQpPOG1NNzYrM3IvTk9VUXJSL3JNTmxiMjYwNitZVXBZVi9SbjE4UmwwSXV5UFJPenhOVGN2aVEzQUNoWjFxVVlRDQptZnBabTJvTXMzcFNmQjhyZUpPcGxET3JuQ3BtOTNqYzNuVnJQT0JRR2hndFlRdUpZcmRPcGd1ZitablZLc0Z2DQplcUZFNVluYXo0Q0FoNGlFblpkOElROHZFajZaR2NzMS9RN0E0dGxlclBSYlpBcXlEM3BwNDdYU3JOYzIzRUlqDQpjV0FPN3M5UVU2RjJhZVAzWjdPQ0U5SkVTei9HYXFGeTBSN0RndFkzdkorSm5KSFl6Q2I3cDA1NitUMDhkK3NXDQorbzZ5YzJwaGlvS0pheGNxRmUxRnlUR0lkM2JxeklCSUFTUStxRnNDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFDQpGSVZEQTh4SWVtNG83enBsMXpqekx3Nm9sUlpoTUI4R0ExVWRJd1FZTUJhQUZJVkRBOHhJZW00bzd6cGwxemp6DQpMdzZvbFJaaE1BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFKMUE0c0dTDQo3WG1YZnBETGJCY2dmSHBtYVc4NEY1T0xKOHNjS3E1MHBiaG1kMnQwZ3B0WTVnT2ZqTHlCWHhuNlBVWTR4S2ZtDQpLa0U2bHE4dVRseTB0YnRvV2dwRGYrRHh0U2xnRnE5Y2FwUVJUVXpPT3lyemYyRm53Y1NKNlJkRTllTkFEQXBvDQozd0JFM2RteHZORnZOYk1tSnVoQUdWazhMdlFCU3lxS3gxNTJBOTJJSFNYODYvaExPQXJDc3NYcmw1NTIrOWdaDQpUN083QkcrVVVtZVFFYW9IVloyeFk0SmRacnA2ZnVNZTNyWFpQY29waHN0czRWSytxVTFNeVA4VllJQlNLR25ODQpuWEpYM3piVTl5b0l1bFZSZUFqT3dPNU5WZHBkblIrTDZURTJtN3oweGQ5UWhheTJxOG41MWJteVRmMnhSanlxDQpZMjNjeXBURDdtTmowTjg9DQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tDQo=
+  key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tDQpNSUlFdmdJQkFEQU5CZ2txaGtpRzl3MEJBUUVGQUFTQ0JLZ3dnZ1NrQWdFQUFvSUJBUUN2dm5kYmhBYWxtVlZwDQpDYWNIUitxMnRmQTc0UG5CL3lxRVdURVBoV2E2bWNyNnREdkpqTyt2dDYvelRsRUswZjZ6RFpXOXV0T3ZtRktXDQpGZjBaOWZFWmRDTHNqMFRzOFRVM0w0a053QW9XZGFsR0VKbjZXWnRxRExONlVud2ZLM2lUcVpRenE1d3FadmQ0DQozTjUxYXp6Z1VCb1lMV0VMaVdLM1RxWUxuL21aMVNyQmIzcWhST1dKMnMrQWdJZUloSjJYZkNFUEx4SSttUm5MDQpOZjBPd09MWlhxejBXMlFLc2c5NmFlTzEwcXpYTnR4Q0kzRmdEdTdQVUZPaGRtbmo5MmV6Z2hQU1JFcy94bXFoDQpjdEVldzRMV043eWZpWnlSMk13bSs2ZE9ldms5UEhmckZ2cU9zbk5xWVlxQ2lXc1hLaFh0UmNreGlIZDI2c3lBDQpTQUVrUHFoYkFnTUJBQUVDZ2dFQVBnTnFENTlyVHdUbnVBeEJaWmJSY2s2SjZqOHRNbkROT20xVW5BTDVLSEE3DQpTVExQQkFSWTBYcnlPZHNSU3MybDM5MnowSUs3enJManRYVWwzZ0xFWkRSd1hHUURzTTQrZG00dUlPMTZRY21jDQpCUTYzbnJqKzE3R0twV2UweDdUcHM4VTdkKzRleVhHUzhwR1JhQUtDdFM1ZXZ0aEliYTg1WjdCM2RCT3Jta1dnDQpOSy9uKzVIRTVXYkNCMUNZclBsMU9OREhHYkNqVXR2aElrMm91NCtZQ29zeC9GVmhYaGdnbEc2VlMzbXVwdG5PDQpGZ3FzbXR5bWN0VDdUWlpaZXVvWWJXVDNMS3NpV2JXOTN6cTl5azJxNWRpbW5zTGNGT1c5cGVzM3ZKZDR3UDNkDQpVaENkY1ZqRy83YU43S25DaVlHcWtiS0x6NlZYVkViL014SEo1R3RuV1FLQmdRRDA5djNKenU1L2lrN0RRTWNaDQoyak45aUJpWEtqTjluVmlINFduNGlidWFGR2cyU0xERWpXWnFpZGRlbTZRUHVRK1FSTUdTR2xpUDZqZERtQUwwDQpjWUExRHMvKzNHSDlVdTcwaERrVUs4NzdLYXRDRG1haENVeFRHb0NGS3QwNlpzK1FGOFIzOWpGeHBNcFkzV2xmDQo0K1NSUFVwVmplbkFUN2c0SGFPSFBZQ0RRd0tCZ1FDM3FUTVdlbDNnYWc0L3NNZjY1L09YcFltRlZ1bXc5ck1WDQpnQzRaQk5Uajl0TTR4eGdQSVlmUVF2czhBQ3hkZUdRdXhhbjVwWEYwMEZObENaSXpFdWNaMmlTVzZtYWxldEcrDQpLSUtiT1VSWHVWbkhSYXduTGY5eUdGSm1RcnRUaDlsWmcvWkRjK01xcGVXQjRORjZQeEI5OVZjWnREN1gvYldDDQp1OEdoS0syWkNRS0JnUUNtSmp5ZXU3Y3lWSG4xbnlNc0dyNmYzMFptaVY0aFRpNjFBeVFnU2pNdlg3WUxVNlJwDQp2RXFCNm5wa2xnWmlEN0JKdHdqZjh2U3NzRHpKb1Bvb0dDL1FUUHF3cjRQYkVYdzM1dExjSnBhZDduWlZPSFZODQp0b1BKUGdsN3lVWUNEYWVzNFNJR0I3c2pqSlVlVHhiZ3ppN0NnQ0xDQXA1UUxRSVROYThyMUlBdEJ3S0JnUUNEDQo0TkFaWE9hWjVTMjBHQ21SQmd0SklnbWNvR3NQc2lXbjA3SEdMMHo3SUZwTlU5RDMxSGprVjZSMVVoNkpRNUNVDQpjVVQ3U1F3dCtBVlo4TVIxUGlhSnpyVWxWTTArRi9JUjNKN2ovUHdSRGJ2a3RpZkd2bVhGdEtjK1hMNk1YV2o1DQp1U01WRGxyWlhlUnVIVlB0dHVrTnVTVEJCVWQyNnV2eUl3WUh4ZURabVFLQmdEWkFFaWpwVVplanpUZTlOcGJLDQpaLzNCcmlDLzlhUjdhUlBDemh0b0pLbGozQ09vWFcwcURmLzBBN1FOSW9oejVybDFSelh2M0RzQ2txK1JYNnpmDQpRVzJzaG1ONFkxR1ZSZ1BEckVRZ0VpVHFocFd2QzZBRFBHbEhYclh0dkUwcnhCbzR4dm5qUFAxbVNxSDcybnJGDQpUSFo0Ny9YVnhySWdJRmIzaEJ0czRIWEgNCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0NCg==
+
+global:
+  postgres:
+    fullNameOverride: "postgres"
+    postgresUser: "postgres"
+    postgresPassword: "postgres"
+    springDataSourceUrl0: "jdbc:postgresql://postgres-0.postgres:5432/app_db"
+    springDataSourceUrl1: "jdbc:postgresql://postgres-1.postgres:5432/app_db"
+    postgresDb: "app_db"
+    postgresPort: "5432"
+    postgresDriverClass: "org.postgresql.Driver"
+
+## Default values for snowflake-id-generator.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+#
+## This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+#replicaCount: 1
+#
+## This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+#image:
+#  repository: nginx
+#  # This sets the pull policy for images.
+#  pullPolicy: IfNotPresent
+#  # Overrides the image tag whose default is the chart appVersion.
+#  tag: ""
+#
+## This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+#imagePullSecrets: []
+## This is to override the chart name.
+#nameOverride: ""
+#fullnameOverride: ""
+#
+## This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+#serviceAccount:
+#  # Specifies whether a service account should be created.
+#  create: true
+#  # Automatically mount a ServiceAccount's API credentials?
+#  automount: true
+#  # Annotations to add to the service account.
+#  annotations: {}
+#  # The name of the service account to use.
+#  # If not set and create is true, a name is generated using the fullname template.
+#  name: ""
+#
+## This is for setting Kubernetes Annotations to a Pod.
+## For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+#podAnnotations: {}
+## This is for setting Kubernetes Labels to a Pod.
+## For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+#podLabels: {}
+#
+#podSecurityContext: {}
+#  # fsGroup: 2000
+#
+#securityContext: {}
+#  # capabilities:
+#  #   drop:
+#  #   - ALL
+#  # readOnlyRootFilesystem: true
+#  # runAsNonRoot: true
+#  # runAsUser: 1000
+#
+## This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+#service:
+#  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+#  type: ClusterIP
+#  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+#  port: 80
+#
+## This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+#ingress:
+#  enabled: false
+#  className: ""
+#  annotations: {}
+#    # kubernetes.io/ingress.class: nginx
+#    # kubernetes.io/tls-acme: "true"
+#  hosts:
+#    - host: chart-example.local
+#      paths:
+#        - path: /
+#          pathType: ImplementationSpecific
+#  tls: []
+#    # - secretName: chart-example-tls
+#    #   hosts:
+#    #     - chart-example.local
+#
+## -- Expose the service via gateway-api HTTPRoute
+## Requires Gateway API resources and suitable controller installed within the cluster
+## (see: https://gateway-api.sigs.k8s.io/guides/)
+#httpRoute:
+#  # HTTPRoute enabled.
+#  enabled: false
+#  # HTTPRoute annotations.
+#  annotations: {}
+#  # Which Gateways this Route is attached to.
+#  parentRefs:
+#  - name: gateway
+#    sectionName: http
+#    # namespace: default
+#  # Hostnames matching HTTP header.
+#  hostnames:
+#  - chart-example.local
+#  # List of rules and filters applied.
+#  rules:
+#  - matches:
+#    - path:
+#        type: PathPrefix
+#        value: /headers
+#  #   filters:
+#  #   - type: RequestHeaderModifier
+#  #     requestHeaderModifier:
+#  #       set:
+#  #       - name: My-Overwrite-Header
+#  #         value: this-is-the-only-value
+#  #       remove:
+#  #       - User-Agent
+#  # - matches:
+#  #   - path:
+#  #       type: PathPrefix
+#  #       value: /echo
+#  #     headers:
+#  #     - name: version
+#  #       value: v2
+#
+#resources: {}
+#  # We usually recommend not to specify default resources and to leave this as a conscious
+#  # choice for the user. This also increases chances charts run on environments with little
+#  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+#  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+#  # limits:
+#  #   cpu: 100m
+#  #   memory: 128Mi
+#  # requests:
+#  #   cpu: 100m
+#  #   memory: 128Mi
+#
+## This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+#livenessProbe:
+#  httpGet:
+#    path: /
+#    port: http
+#readinessProbe:
+#  httpGet:
+#    path: /
+#    port: http
+#
+## This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+#autoscaling:
+#  enabled: false
+#  minReplicas: 1
+#  maxReplicas: 100
+#  targetCPUUtilizationPercentage: 80
+#  # targetMemoryUtilizationPercentage: 80
+#
+## Additional volumes on the output Deployment definition.
+#volumes: []
+#  # - name: foo
+#  #   secret:
+#  #     secretName: mysecret
+#  #     optional: false
+#
+## Additional volumeMounts on the output Deployment definition.
+#volumeMounts: []
+#  # - name: foo
+#  #   mountPath: "/etc/foo"
+#  #   readOnly: true
+#
+#nodeSelector: {}
+#
+#tolerations: []
+#
+#affinity: {}
