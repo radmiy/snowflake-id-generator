@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Chart.Name}}
+spec:
+  serviceName: {{ .Chart.Name }}
+  replicas: {{ .Values.sts.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.sts.image }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Chart.Name }}-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Chart.Name }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Chart.Name }}-config
+                  key: POSTGRES_DB
+          ports:
+            - containerPort: {{ .Values.global.postgres.postgresPort }}
+              name: {{ .Chart.Name }}
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: {{ .Chart.Name }}-config-volume
+              mountPath: /postgres_config
+              readOnly: true
+            - name: {{ .Chart.Name }}-secrets-volume
+              mountPath: /postgres_secrets
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"
+      volumes:
+        - name: {{ .Chart.Name }}-config-volume
+          configMap:
+            name: {{ .Chart.Name }}-config
+        - name: {{ .Chart.Name }}-secrets-volume
+          secret:
+            secretName: {{ .Chart.Name }}-secrets
+  volumeClaimTemplates: # StatefulSet использует volumeClaimTemplates, чтобы каждый Pod получал собственный PersistentVolume
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: hostpath # Необязательно поле, если необходимо отдавать предпочтение объекту StorageClass созданному по умолчанию.
